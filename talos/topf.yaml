@@ -13,7 +13,7 @@ nodes:
   - host: "k8s1"
     ip: "10.26.10.101"
     role: control-plane
-    schematicId: "c900c41a4c3dc052800414e1270c08be489d9ec68310700093b9c8fadafb4dc3"
+    schematicId: "9f001a00aa5f918cc6fbdfb146428e4927ccc9687eb0e09e1f3cee8d5a006541"
     data:
       installDisk: ""
       installDiskSerial: "25104EA4EFA3"
@@ -24,7 +24,7 @@ nodes:
   - host: "k8s2"
     ip: "10.26.10.102"
     role: control-plane
-    schematicId: "c900c41a4c3dc052800414e1270c08be489d9ec68310700093b9c8fadafb4dc3"
+    schematicId: "9f001a00aa5f918cc6fbdfb146428e4927ccc9687eb0e09e1f3cee8d5a006541"
     data:
       installDisk: ""
       installDiskSerial: "22401G800392"
@@ -35,7 +35,7 @@ nodes:
   - host: "k8s3"
     ip: "10.26.10.103"
     role: control-plane
-    schematicId: "c900c41a4c3dc052800414e1270c08be489d9ec68310700093b9c8fadafb4dc3"
+    schematicId: "9f001a00aa5f918cc6fbdfb146428e4927ccc9687eb0e09e1f3cee8d5a006541"
     data:
       installDisk: ""
       installDiskSerial: "S64ANS0T131578N"
