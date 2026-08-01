@@ -9,10 +9,6 @@ customization:
       - siderolabs/iscsi-tools
       - siderolabs/lldpd
       - siderolabs/mei
-      - siderolabs/multipath-tools
-      - siderolabs/nfs-utils
-      - siderolabs/nvme-cli
       - siderolabs/realtek-firmware
-      - siderolabs/usb-modem-drivers
       - siderolabs/util-linux-tools
-id: 9f001a00aa5f918cc6fbdfb146428e4927ccc9687eb0e09e1f3cee8d5a006541
+id: df80d2eec79293b68361c1acde9325888838fda15763aaacbda0c26982ee5465
