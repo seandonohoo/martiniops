@@ -12,13 +12,13 @@ spec:
   values:
     monitoring:
       dashboards:
-        enabled: true
+        enabled: false
         grafanaOperator:
-          enabled: true
+          enabled: false
           matchLabels:
             dashboards: grafana
       prometheusRule:
-        enabled: true
+        enabled: false
       serviceMonitor:
         enabled: true
     podSecurityContext:
