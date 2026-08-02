@@ -86,11 +86,11 @@ spec:
             imageFormat: "2"
           reclaimPolicy: Delete
           volumeBindingMode: Immediate
-    # cephBlockPoolsVolumeSnapshotClass:
-    #   enabled: true
-    #   name: csi-ceph-blockpool
-    #   deletionPolicy: Delete
-    #   isDefault: true
+    cephBlockPoolsVolumeSnapshotClass:
+      enabled: true
+      name: csi-ceph-blockpool
+      deletionPolicy: Delete
+      isDefault: true
     cephFileSystems:
       - name: ceph-filesystem
         spec:
@@ -138,9 +138,9 @@ spec:
           pool: data0
           reclaimPolicy: Delete
           volumeBindingMode: Immediate
-    # cephFileSystemVolumeSnapshotClass:
-    #   enabled: true
-    #   name: csi-ceph-filesystem
-    #   deletionPolicy: Delete
-    #   isDefault: false
+    cephFileSystemVolumeSnapshotClass:
+      enabled: true
+      name: csi-ceph-filesystem
+      deletionPolicy: Delete
+      isDefault: false
     cephObjectStores: []
