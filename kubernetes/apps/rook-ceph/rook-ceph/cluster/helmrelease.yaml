@@ -138,9 +138,9 @@ spec:
           pool: data0
           reclaimPolicy: Delete
           volumeBindingMode: Immediate
-    cephFileSystemVolumeSnapshotClass:
-      enabled: true
-      name: csi-ceph-filesystem
-      deletionPolicy: Delete
-      isDefault: false
+    # cephFileSystemVolumeSnapshotClass:
+    #   enabled: true
+    #   name: csi-ceph-filesystem
+    #   deletionPolicy: Delete
+    #   isDefault: false
     cephObjectStores: []
