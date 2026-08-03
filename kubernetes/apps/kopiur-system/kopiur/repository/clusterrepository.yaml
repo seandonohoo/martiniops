@@ -13,7 +13,7 @@ spec:
         secretRef:
           name: kopiur-repository-secret
           namespace: kopiur-system
-      bucket: kopiur
+      bucket: backups
       endpoint: fastnas.internal:8333
       region: us-east-1
       tls:
