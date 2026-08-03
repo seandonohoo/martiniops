@@ -44,7 +44,7 @@ spec:
     - name: multus-networks
       namespace: kube-system
   interval: 1h
-  path: ./kubernetes/apps/o11y/blackbox-exporter/vpn
+  path: ./kubernetes/apps/o11y/blackbox-exporter/isp2
   prune: true
   sourceRef:
     kind: GitRepository
