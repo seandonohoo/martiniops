@@ -39,6 +39,8 @@ spec:
           limits:
             memory: 8Gi # Required for bootstrap
       storage:
+        useAllDevices: false
+        useAllNodes: false
         nodes:
           - name: k8s1
             devices:
@@ -52,8 +54,7 @@ spec:
         # deviceFilter: "^nvme0n1$|^sd."
         config:
           osdsPerDevice: "1"
-        useAllDevices: false
-        useAllNodes: true
+
     monitoring:
       enabled: true
       createPrometheusRules: true
