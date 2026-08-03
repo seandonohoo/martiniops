@@ -39,7 +39,17 @@ spec:
           limits:
             memory: 8Gi # Required for bootstrap
       storage:
-        deviceFilter: "^nvme1n1$|^sd."
+        nodes:
+          - name: k8s1
+            devices:
+              - name: nvme0n1
+          - name: k82s
+            devices:
+              - name: sdb
+          - name: k83s
+            devices:
+              - name: sdb
+        # deviceFilter: "^nvme0n1$|^sd."
         config:
           osdsPerDevice: "1"
         useAllDevices: false
