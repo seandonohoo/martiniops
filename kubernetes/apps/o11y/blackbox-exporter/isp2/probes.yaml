@@ -11,7 +11,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - fastnas.internal
+        - 1.1.1.1
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter-isp2
