@@ -14,7 +14,7 @@ spec:
     podAnnotations:
       k8s.v1.cni.cncf.io/networks: |-
         [{
-          "name": "isp2",
+          "name": "srvr",
           "namespace": "kube-system",
           "ips": ["10.26.10.250/24"],
           "mac": "3e:d0:83:c0:8e:25"
