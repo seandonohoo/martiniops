@@ -26,5 +26,5 @@ spec:
       dashboards: grafana
   datasources:
     - datasourceName: prometheus
-      inputName: DS_SIGNCL-PROMETHEUS
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/20338/revisions/3/download
