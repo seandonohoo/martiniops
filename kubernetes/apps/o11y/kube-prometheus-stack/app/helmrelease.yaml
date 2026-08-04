@@ -20,14 +20,14 @@ spec:
         main:
           enabled: true
           hostnames:
-            - alertmanager.turbo.ac
+            - alertmanager.martiniops.com
           parentRefs:
             - name: envoy-internal
               namespace: network
       alertmanagerSpec:
         alertmanagerConfiguration:
           name: alertmanager
-        externalUrl: https://alertmanager.turbo.ac
+        externalUrl: https://alertmanager.martiniops.com
         storage:
           volumeClaimTemplate:
             spec:
@@ -46,12 +46,12 @@ spec:
         main:
           enabled: true
           hostnames:
-            - prometheus.turbo.ac
+            - prometheus.martiniops.com
           parentRefs:
             - name: envoy-internal
               namespace: network
       prometheusSpec:
-        externalUrl: https://prometheus.turbo.ac
+        externalUrl: https://prometheus.martiniops.com
         podMonitorSelectorNilUsesHelmValues: false
         probeSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
@@ -104,13 +104,13 @@ spec:
                 expr: (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1
                 labels:
                   severity: critical
-      zfs-rules:
-        groups:
-          - name: zfs
-            rules:
-              - alert: ZfsUnexpectedPoolState
-                annotations:
-                  summary: ZFS pool {{$labels.zpool}} on {{$labels.instance}} is in a unexpected state {{$labels.state}}
-                expr: node_zfs_zpool_state{state!="online"} > 0
-                labels:
-                  severity: critical
+      # zfs-rules:
+      #   groups:
+      #     - name: zfs
+      #       rules:
+      #         - alert: ZfsUnexpectedPoolState
+      #           annotations:
+      #             summary: ZFS pool {{$labels.zpool}} on {{$labels.instance}} is in a unexpected state {{$labels.state}}
+      #           expr: node_zfs_zpool_state{state!="online"} > 0
+      #           labels:
+      #             severity: critical
