@@ -6,3 +6,4 @@ resources:
   - iot.yaml
   - vpn.yaml
   - srvr.yaml
+  - trusted.yaml
