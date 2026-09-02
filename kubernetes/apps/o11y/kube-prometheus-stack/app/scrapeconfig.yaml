@@ -1,21 +1,23 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/scrapeconfig_v1alpha1.json
-apiVersion: monitoring.coreos.com/v1alpha1
-kind: ScrapeConfig
-metadata:
-  name: xgs-pon
-spec:
-  staticConfigs:
-    - targets:
-        - 192.168.11.1:443
-  scheme: HTTPS
-  metricsPath: /cgi-bin/luci/8311/metrics
-  tlsConfig:
-    insecureSkipVerify: true
-  relabelings:
-    - action: replace
-      targetLabel: job
-      replacement: xgs-pon
+# xgs-pon: superseded by the json-exporter Probe (kubernetes/apps/o11y/json-exporter/app/probe.yaml)
+# since this target returns JSON, not the Prometheus exposition format.
+# # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+# apiVersion: monitoring.coreos.com/v1alpha1
+# kind: ScrapeConfig
+# metadata:
+#   name: xgs-pon
+# spec:
+#   staticConfigs:
+#     - targets:
+#         - 192.168.11.1:443
+#   scheme: HTTPS
+#   metricsPath: /cgi-bin/luci/8311/metrics
+#   tlsConfig:
+#     insecureSkipVerify: true
+#   relabelings:
+#     - action: replace
+#       targetLabel: job
+#       replacement: xgs-pon
 # ---
 # # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/scrapeconfig_v1alpha1.json
 # apiVersion: monitoring.coreos.com/v1alpha1

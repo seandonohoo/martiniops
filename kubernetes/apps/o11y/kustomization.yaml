@@ -11,6 +11,7 @@ resources:
   - ./namespace.yaml
   - ./blackbox-exporter/ks.yaml
   - ./grafana-operator/ks.yaml
+  - ./json-exporter/ks.yaml
   - ./kromgo/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
   - ./prometheus-adapter/ks.yaml

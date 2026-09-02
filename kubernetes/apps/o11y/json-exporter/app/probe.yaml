@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: xgs-pon
+spec:
+  jobName: xgs-pon
+  module: xgs_pon
+  prober:
+    url: json-exporter.o11y.svc.cluster.local:7979
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://192.168.11.1/cgi-bin/luci/8311/metrics
+  metricRelabelings:
+    - targetLabel: service
+      replacement: xgs-pon
+      action: replace
