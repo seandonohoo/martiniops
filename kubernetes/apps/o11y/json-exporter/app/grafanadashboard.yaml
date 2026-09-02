@@ -1,0 +1,126 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanadashboard_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: xgs-pon
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
+  json: |
+    {
+      "title": "XGS-PON ONT",
+      "uid": "xgs-pon",
+      "tags": ["xgs-pon", "json-exporter"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "refresh": "1m",
+      "time": { "from": "now-6h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "DS_PROMETHEUS",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {},
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Optical RX/TX Power",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "dBm", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+            "overrides": []
+          },
+          "targets": [
+            { "expr": "xgspon_rx_power_dbm{job=\"xgs-pon\"}", "legendFormat": "RX power", "refId": "A" },
+            { "expr": "xgspon_tx_power_dbm{job=\"xgs-pon\"}", "legendFormat": "TX power", "refId": "B" }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "TX Bias Current",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "mA", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+            "overrides": []
+          },
+          "targets": [
+            { "expr": "xgspon_tx_bias_milliamps{job=\"xgs-pon\"}", "legendFormat": "TX bias", "refId": "A" }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Temperatures",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "fieldConfig": {
+            "defaults": { "unit": "celsius", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+            "overrides": []
+          },
+          "targets": [
+            { "expr": "xgspon_cpu1_temperature_celsius{job=\"xgs-pon\"}", "legendFormat": "CPU1", "refId": "A" },
+            { "expr": "xgspon_cpu2_temperature_celsius{job=\"xgs-pon\"}", "legendFormat": "CPU2", "refId": "B" },
+            { "expr": "xgspon_optic_temperature_celsius{job=\"xgs-pon\"}", "legendFormat": "Optic", "refId": "C" }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Module Voltage",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "fieldConfig": {
+            "defaults": { "unit": "volt", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+            "overrides": []
+          },
+          "targets": [
+            { "expr": "xgspon_module_voltage_volts{job=\"xgs-pon\"}", "legendFormat": "Voltage", "refId": "A" }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "PLOAM State",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+          "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+          "targets": [
+            { "expr": "xgspon_ploam_state{job=\"xgs-pon\"}", "legendFormat": "PLOAM state", "refId": "A" }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Probe Up",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "mappings": [
+                { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+              ]
+            },
+            "overrides": []
+          },
+          "targets": [
+            { "expr": "up{job=\"xgs-pon\"}", "legendFormat": "up", "refId": "A" }
+          ]
+        }
+      ]
+    }

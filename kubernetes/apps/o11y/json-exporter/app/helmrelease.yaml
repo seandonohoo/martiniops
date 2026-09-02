@@ -67,35 +67,27 @@ spec:
                     insecure_skip_verify: true
                 metrics:
                   - name: xgspon_cpu1_temperature_celsius
-                    type: gauge
                     help: CPU1 temperature in Celsius
                     path: "{ .cpu1_tempC }"
                   - name: xgspon_cpu2_temperature_celsius
-                    type: gauge
                     help: CPU2 temperature in Celsius
                     path: "{ .cpu2_tempC }"
                   - name: xgspon_module_voltage_volts
-                    type: gauge
                     help: Module voltage in Volts
                     path: "{ .module_voltage }"
                   - name: xgspon_optic_temperature_celsius
-                    type: gauge
                     help: Optic temperature in Celsius
                     path: "{ .optic_tempC }"
                   - name: xgspon_ploam_state
-                    type: gauge
                     help: PLOAM state
                     path: "{ .ploam_state }"
                   - name: xgspon_rx_power_dbm
-                    type: gauge
                     help: RX optical power in dBm
                     path: "{ .rx_power_dBm }"
                   - name: xgspon_tx_bias_milliamps
-                    type: gauge
                     help: TX bias current in mA
                     path: "{ .tx_bias_mA }"
                   - name: xgspon_tx_power_dbm
-                    type: gauge
                     help: TX optical power in dBm
                     path: "{ .tx_power_dBm }"
     persistence:
