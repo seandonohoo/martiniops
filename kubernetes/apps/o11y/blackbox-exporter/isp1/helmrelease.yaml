@@ -21,6 +21,15 @@ spec:
         }]
     config:
       modules:
+        dns:
+          prober: dns
+          timeout: 5s
+          dns:
+            preferred_ip_protocol: ip4
+            query_name: cloudflare.com
+            query_type: A
+            valid_rcodes:
+              - NOERROR
         http_2xx:
           prober: http
           timeout: 5s

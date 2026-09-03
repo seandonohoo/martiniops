@@ -12,6 +12,28 @@ spec:
     staticConfig:
       static:
         - 1.1.1.1
+        - 8.8.8.8
+        - 9.9.9.9
+  metricRelabelings:
+    - targetLabel: service
+      replacement: blackbox-exporter-isp2
+      action: replace
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: isp2-dns
+spec:
+  jobName: dns_probe
+  module: dns
+  prober:
+    url: blackbox-exporter-isp2.o11y.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - 1.1.1.1:53
+        - 8.8.8.8:53
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter-isp2
