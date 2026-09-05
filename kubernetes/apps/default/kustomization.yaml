@@ -8,5 +8,6 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./kopiur-repository-secret.yaml
   - ./echo/ks.yaml
   - ./plex/ks.yaml
