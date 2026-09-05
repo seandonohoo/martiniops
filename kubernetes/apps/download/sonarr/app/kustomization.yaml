@@ -6,11 +6,11 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-configMapGenerator:
-  - name: sonarr-configmap
-    files:
-      - refresh-series.sh=./resources/refresh-series.sh
-      - tag-resolution.sh=./resources/tag-resolution.sh
+# configMapGenerator:
+#   - name: sonarr-configmap
+#     files:
+#       - refresh-series.sh=./resources/refresh-series.sh
+#       - tag-resolution.sh=./resources/tag-resolution.sh
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
