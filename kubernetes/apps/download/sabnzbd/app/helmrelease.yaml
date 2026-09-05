@@ -70,7 +70,7 @@ spec:
     route:
       app:
         hostnames:
-          - "{{ .Release.Name }}.turbo.ac"
+          - "{{ .Release.Name }}.martiniops.com"
         parentRefs:
           - name: envoy-internal
             namespace: network
