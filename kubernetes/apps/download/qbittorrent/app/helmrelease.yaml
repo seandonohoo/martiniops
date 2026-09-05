@@ -10,16 +10,17 @@ spec:
     name: qbittorrent
   interval: 1h
   values:
-    podAnnotations:
-      k8s.v1.cni.cncf.io/networks: |-
-        [{
-          "name": "vpn",
-          "namespace": "kube-system",
-          "ips": ["10.26.99.123/24"],
-          "mac": "3e:d0:83:c0:8e:23"
-        }]
     controllers:
       qbittorrent:
+        pod:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: |-
+              [{
+                "name": "vpn",
+                "namespace": "kube-system",
+                "ips": ["10.26.99.123/24"],
+                "mac": "3e:d0:83:c0:8e:23"
+              }]
         containers:
           app:
             image:
@@ -60,6 +61,7 @@ spec:
                 cpu: 100m
               limits:
                 memory: 32Gi
+
     defaultPodOptions:
       terminationGracePeriodSeconds: 300
       securityContext:
