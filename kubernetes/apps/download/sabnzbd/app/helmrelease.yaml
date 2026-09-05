@@ -19,8 +19,8 @@ spec:
               tag: 5.1.2@sha256:8172dc78c4e70baf88b18afca851bf77487e2e22802a6bd3502d7ef211dfb8fd
             env:
               SABNZBD__PORT: &port 80
-              SABNZBD__HOST_WHITELIST_ENTRIES: sabnzbd.turbo.ac
-              TZ: America/New_York
+              SABNZBD__HOST_WHITELIST_ENTRIES: sabnzbd.martiniops.com
+              TZ: America/Chicago
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
@@ -79,8 +79,8 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: 10.26.10.20
+        path: /volume1/Media
         globalMounts:
           - path: /media
       tmp:
