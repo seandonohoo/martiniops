@@ -9,7 +9,7 @@ spec:
     - ../../../../components/kopiur/backup
     - ../../../../components/zeroscaler
   interval: 1h
-  path: ./kubernetes/apps/default/sonarr/app
+  path: ./kubernetes/apps/download/sonarr/app
   postBuild:
     substitute:
       APP: sonarr
@@ -18,5 +18,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: default
+  targetNamespace: download
   wait: false

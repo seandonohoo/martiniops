@@ -79,7 +79,7 @@ spec:
     route:
       app:
         hostnames:
-          - "{{ .Release.Name }}.turbo.ac"
+          - "{{ .Release.Name }}.martiniops.com"
         parentRefs:
           - name: envoy-internal
             namespace: network
@@ -94,8 +94,8 @@ spec:
           - readOnly: true
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: 10.26.10.20
+        path: /volume1/Media
         globalMounts:
           - path: /media
       tmp:
