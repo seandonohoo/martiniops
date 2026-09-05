@@ -10,9 +10,12 @@ cluster:
     extraArgs:
       # https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/
       enable-aggregator-routing: true
+      # https://github.com/kubernetes/enhancements/tree/master/keps/sig-autoscaling/2021-horizontal-pod-autoscaler-scale-to-zero
+      feature-gates: HPAScaleToZero=true
   controllerManager:
     extraArgs:
       bind-address: 0.0.0.0
+      feature-gates: HPAScaleToZero=true
   coreDNS:
     disabled: true
   etcd:

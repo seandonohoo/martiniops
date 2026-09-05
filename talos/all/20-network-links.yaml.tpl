@@ -19,6 +19,20 @@ routes:
 {{- if eq .Node.Role "control-plane" }}
 ---
 apiVersion: v1alpha1
+kind: VLANConfig
+name: bond0.99
+vlanID: 99
+parent: bond0
+mtu: 9000
+---
+apiVersion: v1alpha1
+kind: VLANConfig
+name: bond0.50
+vlanID: 50
+parent: bond0
+mtu: 9000
+---
+apiVersion: v1alpha1
 kind: Layer2VIPConfig
 link: bond0
 name: "10.26.10.100"
