@@ -107,10 +107,16 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: 10.26.10.20
+        path: /volume1/Media
         globalMounts:
           - path: /media
             readOnly: true
+      optimized:
+        type: nfs
+        server: 10.26.10.20
+        path: /volume1/Media/Optimized
+        globalMounts:
+          - path: /optimized
       tmp:
         type: emptyDir
