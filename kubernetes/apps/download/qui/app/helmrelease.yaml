@@ -28,7 +28,7 @@ spec:
               QUI__METRICS_ENABLED: true
               QUI__METRICS_HOST: 0.0.0.0
               QUI__METRICS_PORT: &metricsPort 8080
-              TZ: America/New_York
+              TZ: America/Chicago
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
@@ -84,7 +84,7 @@ spec:
     route:
       app:
         hostnames:
-          - "{{ .Release.Name }}.turbo.ac"
+          - "{{ .Release.Name }}.martiniops.com"
         parentRefs:
           - name: envoy-internal
             namespace: network
@@ -97,7 +97,7 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       media:
         type: nfs
-        server: expanse.internal
-        path: /mnt/eros/Media
+        server: 10.26.10.20
+        path: /volume1/Media
         globalMounts:
           - path: /media
