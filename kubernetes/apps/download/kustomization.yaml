@@ -9,3 +9,4 @@ components:
 resources:
   - ./namespace.yaml
   - ./sabnzbd/ks.yaml
+  - ./kopiur-repository-secret.yaml
