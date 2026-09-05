@@ -77,7 +77,7 @@ spec:
       metadata:
         size: 10Gi
         accessMode: ReadWriteOnce
-        storageClass: miroir-local
+        storageClass: ceph-filesystem
         suffix: "metadata"
         globalMounts:
           - path: /metadata
