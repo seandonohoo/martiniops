@@ -22,7 +22,7 @@ spec:
             runAsUser: 2000
             runAsGroup: 2000
             fsGroup: 2000
-            fsGroupChangePolicy: "OnRootMismatch"
+            fsGroupChangePolicy: "Always"
         containers:
           app:
             image:
@@ -88,11 +88,9 @@ spec:
         type: nfs
         server: 10.26.10.20
         path: /volume1/Media
-        advancedMounts:
-          jellyfin:
-            app:
-              - path: /data/nas-media/Library
-                subPath: Library
+        globalMounts:
+          - path: /media
+            readOnly: true
       tmpfs:
         type: emptyDir
         advancedMounts:
