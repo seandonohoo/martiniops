@@ -30,7 +30,7 @@ spec:
               tag: 10.11.11@sha256:45f648c382a0c8b552582fcea40e95cb17c5d475473a891cba0eb7523fb92112
             env:
               DOTNET_SYSTEM_IO_DISABLEFILELOCKING: "true"
-              JELLYFIN_PublishedServerUrl: https://jellyfin.bjw-s.dev
+              JELLYFIN_PublishedServerUrl: https://jellyfin.martiniops.com
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -84,10 +84,10 @@ spec:
             subPath: metadata
           - path: /config/data/introskipper
             subPath: introskipper
-      nfs-nas-media:
+      media:
         type: nfs
-        server: gladius.bjw-s.internal
-        path: /mnt/tank/media
+        server: 10.26.10.20
+        path: /volume1/Media
         advancedMounts:
           jellyfin:
             app:
@@ -107,7 +107,7 @@ spec:
     route:
       app:
         hostnames:
-          - jellyfin.bjw-s.dev
+          - jellyfin.martiniops.com
         parentRefs:
           - name: envoy-internal
             namespace: network
@@ -115,7 +115,7 @@ spec:
       app:
         type: LoadBalancer
         annotations:
-          lbipam.cilium.io/ips: 10.1.6.62
+          lbipam.cilium.io/ips: 10.26.10.121
         externalTrafficPolicy: Local
         ports:
           http:

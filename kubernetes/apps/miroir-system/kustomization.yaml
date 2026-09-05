@@ -2,7 +2,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: miroir-system
+components:
+  - ../../components/alerts
 resources:
-  - ./ocirepository.yaml
-  - ./helmrelease.yaml
-  # - ./ciliumnetworkpolicy.yaml
+  - ./namespace.yaml
+  - ./miroir/ks.yaml
