@@ -23,6 +23,27 @@ spec:
             runAsGroup: 2000
             fsGroup: 2000
             fsGroupChangePolicy: "Always"
+        initContainers:
+          fix-permissions:
+            image:
+              repository: busybox
+              tag: 1.37.0
+            command:
+              - sh
+              - -c
+              # /config/data is an auto-created bind-mount parent directory for the
+              # nested introskipper volume mount below; kubelet creates it root:fsGroup
+              # 0755 without the group-write bit the rest of the volume gets, so Jellyfin
+              # can't write its `.jellyfin-data` marker there without this fixup.
+              - chmod g+rwX /config/data
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
         containers:
           app:
             image:
