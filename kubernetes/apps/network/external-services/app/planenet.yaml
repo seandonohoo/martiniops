@@ -1,0 +1,61 @@
+---
+# PlaneNet runs outside the cluster at 10.26.20.171, serving the main
+# app on port 80 and the map view on port 8080.
+apiVersion: v1
+kind: Service
+metadata:
+  name: planenet
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: map
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: planenet
+  labels:
+    kubernetes.io/service-name: planenet
+addressType: IPv4
+ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: map
+    port: 8080
+    protocol: TCP
+endpoints:
+  - addresses:
+      - 10.26.20.171
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: planenet
+spec:
+  hostnames:
+    - planenet.martiniops.com
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /map
+      backendRefs:
+        - name: planenet
+          port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: planenet
+          port: 80
