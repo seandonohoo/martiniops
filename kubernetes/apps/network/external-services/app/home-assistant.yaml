@@ -1,0 +1,45 @@
+---
+# Home Assistant runs outside the cluster at 10.26.1.50:8123.
+# Service has no selector; the EndpointSlice below supplies the
+# out-of-cluster address so the Service still gets a ClusterIP
+# the HTTPRoute can send traffic to.
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-assistant
+spec:
+  ports:
+    - name: http
+      port: 8123
+      targetPort: 8123
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: home-assistant
+  labels:
+    kubernetes.io/service-name: home-assistant
+addressType: IPv4
+ports:
+  - name: http
+    port: 8123
+    protocol: TCP
+endpoints:
+  - addresses:
+      - 10.26.1.50
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: home-assistant
+spec:
+  hostnames:
+    - ha.martiniops.com
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - backendRefs:
+        - name: home-assistant
+          port: 8123
