@@ -80,5 +80,14 @@
       matchDatasources: ["github-releases"],
       addLabels: ["renovate/github-release"],
     },
+    {
+      description: "Auto-merge container & Helm minor/patch/digest",
+      matchDatasources: ["docker", "helm"],
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      matchPackageNames: ["!/rook-ceph/", "!/cilium/", "!/flux-/", "!/siderolabs/"],
+      automerge: true,
+      automergeType: "pr",
+      minimumReleaseAge: "3 days",
+    },
   ],
 }
