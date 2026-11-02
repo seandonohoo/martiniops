@@ -1,0 +1,43 @@
+---
+# OpenCloud runs outside the cluster on fastnas.internal (10.26.10.15:9200)
+# with PROXY_TLS=false; Envoy terminates TLS with the wildcard cert.
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencloud
+spec:
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: opencloud
+  labels:
+    kubernetes.io/service-name: opencloud
+addressType: IPv4
+ports:
+  - name: http
+    port: 9200
+    protocol: TCP
+endpoints:
+  - addresses:
+      - 10.26.10.15
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: opencloud
+spec:
+  hostnames:
+    - oc.martiniops.com
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - backendRefs:
+        - name: opencloud
+          port: 9200
