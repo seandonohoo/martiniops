@@ -7,3 +7,10 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./podmonitor.yaml
+  - ./prometheusrule.yaml
+configMapGenerator:
+  - name: cloudnative-pg-dashboard
+    files:
+      - cloudnative-pg.json=./resources/cloudnative-pg.json
+generatorOptions:
+  disableNameSuffixHash: true
