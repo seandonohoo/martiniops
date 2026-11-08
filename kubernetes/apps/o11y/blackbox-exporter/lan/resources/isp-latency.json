@@ -111,6 +111,19 @@
         ]
       },
       {
+        "name": "trend",
+        "label": "Trend window",
+        "description": "Window for the rolling-median trend line on the per-destination graphs",
+        "type": "custom",
+        "query": "15m,1h,6h",
+        "current": { "text": "1h", "value": "1h" },
+        "options": [
+          { "text": "15m", "value": "15m", "selected": false },
+          { "text": "1h", "value": "1h", "selected": true },
+          { "text": "6h", "value": "6h", "selected": false }
+        ]
+      },
+      {
         "name": "probe",
         "type": "query",
         "hide": 2,
@@ -279,7 +292,7 @@
     {
       "id": 5,
       "title": "$dest",
-      "description": "Peak RTT per time slice for one destination over every path. If every path rises together the problem is at or near the destination; if only one path rises, it's that ISP.",
+      "description": "One destination over every path. Dots are the peak RTT in each time slice; the bold line is the rolling median over the trend window, which filters out one-off spikes so slow drift and daily patterns stand out. If every path rises together the problem is at or near the destination; if only one path rises, it's that ISP.",
       "type": "timeseries",
       "repeat": "dest",
       "repeatDirection": "h",
@@ -302,21 +315,49 @@
           "unit": "s",
           "decimals": 1,
           "custom": {
-            "drawStyle": "line",
+            "drawStyle": "points",
+            "pointSize": 3,
             "lineWidth": 1,
             "fillOpacity": 0,
-            "showPoints": "never",
+            "showPoints": "always",
             "axisSoftMin": 0,
             "spanNulls": false
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "/^isp1( trend)?$/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/^isp2( trend)?$/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/^vpn( trend)?$/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/ trend$/" },
+            "properties": [
+              { "id": "custom.drawStyle", "value": "line" },
+              { "id": "custom.lineWidth", "value": 3 },
+              { "id": "custom.showPoints", "value": "never" },
+              { "id": "custom.lineInterpolation", "value": "smooth" }
+            ]
+          }
+        ]
       },
       "targets": [
         {
           "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=\"$dest\"}[$__interval]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
           "legendFormat": "{{path}}",
           "refId": "A"
+        },
+        {
+          "expr": "label_replace(quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=\"$dest\"}[$trend]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "legendFormat": "{{path}} trend",
+          "refId": "B"
         }
       ]
     },
