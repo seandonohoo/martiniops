@@ -1,0 +1,577 @@
+{
+  "title": "ISP Latency",
+  "uid": "isp-latency",
+  "description": "Where and when ICMP latency rises across ISP paths and destinations",
+  "tags": ["blackbox-exporter", "network"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "graphTooltip": 1,
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "name": "Packet loss",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "enable": true,
+        "iconColor": "red",
+        "expr": "label_replace(probe_success{job=~\"probe/o11y/.*-icmp\", service=~\"$path\", instance=~\"$target\"} == 0, \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+        "step": "30s",
+        "titleFormat": "Packet loss",
+        "textFormat": "{{path}} → {{instance}}",
+        "tagKeys": "path,instance",
+        "useValueForTime": false
+      },
+      {
+        "name": "Route change",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "enable": true,
+        "iconColor": "blue",
+        "expr": "label_replace(changes(probe_icmp_reply_hop_limit{service=~\"$path\", instance=~\"$target\"}[2m]) > 0, \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+        "step": "1m",
+        "titleFormat": "Route change (reply TTL changed)",
+        "textFormat": "{{path}} → {{instance}}",
+        "tagKeys": "path,instance",
+        "useValueForTime": false
+      },
+      {
+        "name": "Latency spike",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "enable": false,
+        "iconColor": "orange",
+        "expr": "label_replace((max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[1m]) > 3 * quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$baseline])) and max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[1m]) > 0.02, \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+        "step": "1m",
+        "titleFormat": "Latency spike (>3× median)",
+        "textFormat": "{{path}} → {{instance}}",
+        "tagKeys": "path,instance",
+        "useValueForTime": false
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 2
+      },
+      {
+        "name": "path",
+        "label": "Path",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": {
+          "query": "label_values(probe_icmp_duration_seconds{phase=\"rtt\"}, service)",
+          "refId": "path"
+        },
+        "regex": "/(?<value>blackbox-exporter-(?<text>.+))/",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "target",
+        "label": "Destination",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": {
+          "query": "label_values(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\"}, instance)",
+          "refId": "target"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "baseline",
+        "label": "Baseline",
+        "description": "Window used for the 'normal' median that latency is compared against",
+        "type": "custom",
+        "query": "6h : 6h:1m,1d : 1d:5m,7d : 7d:30m",
+        "current": { "text": "1d", "value": "1d:5m" },
+        "options": [
+          { "text": "6h", "value": "6h:1m", "selected": false },
+          { "text": "1d", "value": "1d:5m", "selected": true },
+          { "text": "7d", "value": "7d:30m", "selected": false }
+        ]
+      },
+      {
+        "name": "probe",
+        "type": "query",
+        "hide": 2,
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": {
+          "query": "query_result(count by (display, instance, service) (label_join(label_replace(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=~\"$target\"}, \"p\", \"$1\", \"service\", \"blackbox-exporter-(.*)\"), \"display\", \" → \", \"p\", \"instance\")))",
+          "refId": "probe"
+        },
+        "regex": "/display=\"(?<text>[^\"]+)\",\\s*(?<value>instance=\"[^\"]+\",\\s*service=\"[^\"]+\")/",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "dest",
+        "type": "query",
+        "hide": 2,
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": {
+          "query": "label_values(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=~\"$target\"}, instance)",
+          "refId": "dest"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Current RTT (peak over last minute)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "vertical"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "#EAB839", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[1m]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "legendFormat": "{{path}} → {{instance}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "When latency rose: RTT vs normal (${baseline:text} median)",
+      "description": "Each row is one path → destination. Colour is the peak RTT in each time slice divided by that row's median over the baseline window, so every row is judged against its own normal. Green < 1.5×, yellow 1.5–3×, orange 3–5×, red > 5×. Hover for the exact multiple and time.",
+      "type": "state-timeline",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
+      "interval": "10s",
+      "maxDataPoints": 600,
+      "options": {
+        "mergeValues": false,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.85,
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix:×",
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "#EAB839", "value": 1.5 },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "custom": { "fillOpacity": 85, "lineWidth": 0 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__interval]) / quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$baseline]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "legendFormat": "{{path}} → {{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Packet loss",
+      "description": "Share of failed pings in each time slice.",
+      "type": "state-timeline",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 14 },
+      "interval": "10s",
+      "maxDataPoints": 600,
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.85,
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 0,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.0001 },
+              { "color": "red", "value": 0.25 }
+            ]
+          },
+          "custom": { "fillOpacity": 85, "lineWidth": 0 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "label_replace(1 - avg_over_time(probe_success{job=~\"probe/o11y/.*-icmp\", service=~\"$path\", instance=~\"$target\"}[$__interval]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "legendFormat": "{{path}} → {{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Same destination, different paths",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "$dest",
+      "description": "Peak RTT per time slice for one destination over every path. If every path rises together the problem is at or near the destination; if only one path rises, it's that ISP.",
+      "type": "timeseries",
+      "repeat": "dest",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 22 },
+      "interval": "10s",
+      "maxDataPoints": 600,
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["median", "max"]
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=\"$dest\"}[$__interval]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "legendFormat": "{{path}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Smoke: spread of RTT per path → destination",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "${probe:text}",
+      "description": "SmokePing-style view. The grey band spans the fastest to slowest ping in each time slice and the green line is the median. A wide band means jitter; a band that lifts as a whole means the baseline moved. Red bars (right axis) are packet loss.",
+      "type": "timeseries",
+      "repeat": "probe",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 31 },
+      "interval": "10s",
+      "maxDataPoints": 200,
+      "options": {
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "spanNulls": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#8a8a8a" } },
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.fillOpacity", "value": 35 },
+              { "id": "custom.fillBelowTo", "value": "min" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "min" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#8a8a8a" } },
+              { "id": "custom.lineWidth", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "median" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } },
+              { "id": "custom.lineWidth", "value": 2 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "loss" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 0 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.drawStyle", "value": "bars" },
+              { "id": "custom.fillOpacity", "value": 80 },
+              { "id": "custom.axisSoftMin", "value": 0 },
+              { "id": "custom.axisSoftMax", "value": 1 }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "min_over_time((probe_icmp_duration_seconds{phase=\"rtt\", ${probe:raw}} > 0)[$__interval:10s])",
+          "legendFormat": "min",
+          "refId": "A"
+        },
+        {
+          "expr": "quantile_over_time(0.5, (probe_icmp_duration_seconds{phase=\"rtt\", ${probe:raw}} > 0)[$__interval:10s])",
+          "legendFormat": "median",
+          "refId": "B"
+        },
+        {
+          "expr": "max_over_time((probe_icmp_duration_seconds{phase=\"rtt\", ${probe:raw}} > 0)[$__interval:10s])",
+          "legendFormat": "max",
+          "refId": "C"
+        },
+        {
+          "expr": "1 - avg_over_time(probe_success{job=~\"probe/o11y/.*-icmp\", ${probe:raw}}[$__interval]) > 0",
+          "legendFormat": "loss",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Summary",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "Summary over selected time range",
+      "description": "Jitter is the standard deviation of RTT. Route changes counts changes in the reply TTL, which happens when the network path to the destination changes.",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 40 },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [{ "displayName": "p99", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p99" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "#EAB839", "value": 0.05 },
+                    { "color": "red", "value": 0.1 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Loss" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 2 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "orange", "value": 0.0001 },
+                    { "color": "red", "value": 0.01 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Route changes" },
+            "properties": [
+              { "id": "unit", "value": "none" },
+              { "id": "decimals", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "B",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(quantile_over_time(0.95, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "C",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(quantile_over_time(0.99, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "D",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "E",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(stddev_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "F",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(1 - avg_over_time(probe_success{job=~\"probe/o11y/.*-icmp\", service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        },
+        {
+          "refId": "G",
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(changes(probe_icmp_reply_hop_limit{service=~\"$path\", instance=~\"$target\"}[$__range]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "job": true,
+              "namespace": true,
+              "phase": true,
+              "service": true
+            },
+            "indexByName": {
+              "path": 0,
+              "instance": 1,
+              "Value #A": 2,
+              "Value #B": 3,
+              "Value #C": 4,
+              "Value #D": 5,
+              "Value #E": 6,
+              "Value #F": 7,
+              "Value #G": 8
+            },
+            "renameByName": {
+              "path": "Path",
+              "instance": "Destination",
+              "Value #A": "Median",
+              "Value #B": "p95",
+              "Value #C": "p99",
+              "Value #D": "Max",
+              "Value #E": "Jitter",
+              "Value #F": "Loss",
+              "Value #G": "Route changes"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
