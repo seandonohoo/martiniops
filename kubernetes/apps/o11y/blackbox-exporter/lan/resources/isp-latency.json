@@ -316,7 +316,7 @@
           "decimals": 1,
           "custom": {
             "drawStyle": "points",
-            "pointSize": 3,
+            "pointSize": 2,
             "lineWidth": 1,
             "fillOpacity": 0,
             "showPoints": "always",
@@ -326,15 +326,42 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byRegexp", "options": "/^isp1( trend)?$/" },
+            "matcher": { "id": "byName", "options": "isp1" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "mode": "fixed", "fixedColor": "rgba(50, 116, 217, 0.3)" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "isp2" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "mode": "fixed", "fixedColor": "rgba(255, 120, 10, 0.3)" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "vpn" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "mode": "fixed", "fixedColor": "rgba(163, 82, 204, 0.3)" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "isp1 trend" },
             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }]
           },
           {
-            "matcher": { "id": "byRegexp", "options": "/^isp2( trend)?$/" },
+            "matcher": { "id": "byName", "options": "isp2 trend" },
             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
           },
           {
-            "matcher": { "id": "byRegexp", "options": "/^vpn( trend)?$/" },
+            "matcher": { "id": "byName", "options": "vpn trend" },
             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }]
           },
           {
@@ -350,12 +377,12 @@
       },
       "targets": [
         {
-          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=\"$dest\"}[$__interval]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "expr": "label_replace(max_over_time(probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=~\"$dest\"}[$__interval]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
           "legendFormat": "{{path}}",
           "refId": "A"
         },
         {
-          "expr": "label_replace(quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=\"$dest\"}[$trend]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
+          "expr": "label_replace(quantile_over_time(0.5, probe_icmp_duration_seconds{phase=\"rtt\", service=~\"$path\", service!=\"blackbox-exporter-lan\", instance=~\"$dest\"}[$trend]), \"path\", \"$1\", \"service\", \"blackbox-exporter-(.*)\")",
           "legendFormat": "{{path}} trend",
           "refId": "B"
         }
