@@ -1,0 +1,55 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: authentik
+  interval: 1h
+  values:
+    global:
+      deploymentAnnotations:
+        reloader.stakater.com/auto: "true"
+      env:
+        - name: AUTHENTIK_POSTGRESQL__PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-app
+              key: password
+        - name: AUTHENTIK_POSTGRESQL__SSLMODE
+          value: require
+      envFrom:
+        - secretRef:
+            name: authentik-secret
+    authentik:
+      postgresql:
+        host: authentik-rw
+        name: authentik
+        user: authentik
+    server:
+      resources:
+        requests:
+          cpu: 100m
+        limits:
+          memory: 1Gi
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      route:
+        main:
+          enabled: true
+          hostnames:
+            - auth.martiniops.com
+          parentRefs:
+            - name: envoy-external
+              namespace: network
+    worker:
+      resources:
+        requests:
+          cpu: 100m
+        limits:
+          memory: 1Gi
