@@ -19,3 +19,8 @@ spec:
       cpu: 50m
     limits:
       memory: 1Gi
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: authentik
