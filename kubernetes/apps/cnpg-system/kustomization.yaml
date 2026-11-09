@@ -9,5 +9,5 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./cloudnative-pg/ks.yaml
-  - ./plugin-barman-cloud/ks.yaml
+  # - ./cloudnative-pg/ks.yaml
+  # - ./plugin-barman-cloud/ks.yaml
