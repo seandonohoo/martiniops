@@ -8,7 +8,7 @@ The `authentik` CloudNativePG cluster backs up to `s3://cnpg/authentik/` on fast
 - A base backup runs daily at 08:00 UTC (`ScheduledBackup/authentik`)
 - Retention is 14 days
 
-`cnpg-system/cloudnative-pg/app/prometheusrule.yaml` alerts on failed or stale (>26h) backups and on WAL
+`database/cloudnative-pg/app/prometheusrule.yaml` alerts on failed or stale (>26h) backups and on WAL
 archiving failures, and the CloudNativePG Grafana dashboard shows the recovery window per cluster.
 
 Check backup health:
