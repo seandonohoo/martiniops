@@ -9,7 +9,7 @@ spec:
     - ../../../../components/kopiur/backup
   dependsOn:
     - name: multus-networks
-      namespace: network
+      namespace: kube-system
   interval: 1h
   path: "./kubernetes/apps/selfhosted/bambuddy/app"
   postBuild:
