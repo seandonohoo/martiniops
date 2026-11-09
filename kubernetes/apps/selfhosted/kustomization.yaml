@@ -9,4 +9,5 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./kopiur-repository-secret.yaml
   - ./bambuddy/ks.yaml
