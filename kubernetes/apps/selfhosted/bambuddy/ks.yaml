@@ -16,6 +16,8 @@ spec:
     substitute:
       APP: bambuddy
       KOPIUR_CAPACITY: 5Gi
+      KOPIUR_PUID: "2000"
+      KOPIUR_PGID: "2000"
   prune: true
   sourceRef:
     kind: GitRepository

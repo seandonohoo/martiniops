@@ -27,6 +27,13 @@ mtu: 9000
 ---
 apiVersion: v1alpha1
 kind: VLANConfig
+name: bond0.20
+vlanID: 20
+parent: bond0
+mtu: 9000
+---
+apiVersion: v1alpha1
+kind: VLANConfig
 name: bond0.50
 vlanID: 50
 parent: bond0
