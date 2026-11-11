@@ -11,6 +11,9 @@ spec:
     initdb:
       database: authentik
       owner: authentik
+  storage:
+    size: 10Gi
+    storageClass: ceph-block
   resources:
     requests:
       cpu: 50m
@@ -21,3 +24,5 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: authentik
+        # authentik/ holds the pre-2026-11-09 cluster's archive; bump on every recreate/restore (see README)
+        serverName: authentik-2

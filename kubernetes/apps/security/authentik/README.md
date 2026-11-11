@@ -2,7 +2,7 @@
 
 ## Database backups
 
-The `authentik` CloudNativePG cluster backs up to `s3://cnpg/authentik/` on fastnas through the barman-cloud plugin:
+The `authentik` CloudNativePG cluster backs up to `s3://cnpg/authentik-2/` on fastnas through the barman-cloud plugin:
 
 - WAL is archived continuously (`ObjectStore/authentik`)
 - A base backup runs daily at 08:00 UTC (`ScheduledBackup/authentik`)
@@ -69,9 +69,9 @@ spec:
         name: barman-cloud.cloudnative-pg.io
         parameters:
           barmanObjectName: authentik
-          serverName: authentik # the serverName currently being archived to
+          serverName: authentik-2 # the serverName currently being archived to
   storage:
-    size: 5Gi
+    size: 10Gi
     storageClass: ceph-block
 EOF
 
@@ -94,7 +94,7 @@ kubectl delete cluster authentik-restore-test -n security
     ```
 
 2. In `app/cluster.yaml`, replace `bootstrap.initdb` with `bootstrap.recovery`, add `externalClusters`,
-   and bump the archive `serverName`. For the first restore:
+   and bump the archive `serverName`. For the next restore:
 
     ```yaml
     spec:
@@ -112,13 +112,13 @@ kubectl delete cluster authentik-restore-test -n security
                   name: barman-cloud.cloudnative-pg.io
                   parameters:
                       barmanObjectName: authentik
-                      serverName: authentik # previous serverName
+                      serverName: authentik-2 # previous serverName
         plugins:
             - name: barman-cloud.cloudnative-pg.io
               isWALArchiver: true
               parameters:
                   barmanObjectName: authentik
-                  serverName: authentik-2 # new, empty path
+                  serverName: authentik-3 # new, empty path
     ```
 
     Commit and push. `bootstrap` only applies when a cluster is created, so it's fine to leave this in place
