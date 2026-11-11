@@ -11,9 +11,6 @@ spec:
     initdb:
       database: authentik
       owner: authentik
-  storage:
-    size: 5Gi
-    storageClass: ceph-block
   resources:
     requests:
       cpu: 50m
