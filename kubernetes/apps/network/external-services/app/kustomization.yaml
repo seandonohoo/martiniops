@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - ./birdnet.yaml
   - ./home-assistant.yaml
-  - ./opencloud.yaml
   - ./planenet.yaml

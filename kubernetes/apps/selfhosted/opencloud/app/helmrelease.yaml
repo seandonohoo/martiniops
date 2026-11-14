@@ -1,0 +1,164 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencloud
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: opencloud
+  interval: 1h
+  values:
+    networkpolicies:
+      opencloud:
+        type: cilium
+        ingress:
+          - fromEndpoints:
+              - matchLabels:
+                  k8s:io.kubernetes.pod.namespace: network
+                  gateway.networking.k8s.io/gateway-name: envoy-internal
+            toPorts:
+              - ports:
+                  - port: "9200"
+                    protocol: TCP
+    controllers:
+      opencloud:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Generates /etc/opencloud/opencloud.yaml (service secrets, random admin password) on first start only
+          init-config:
+            image: &image
+              repository: docker.io/opencloudeu/opencloud
+              tag: 7.2.5@sha256:26fcc6f69d71937af015be73c585e7c36d1945d547fa2a6f706118283f1bcd6b
+            command:
+              - /bin/sh
+              - -c
+              - "[ -f /etc/opencloud/opencloud.yaml ] || opencloud init"
+            env:
+              OC_INSECURE: "false"
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+        containers:
+          app:
+            image: *image
+            env:
+              OC_URL: https://oc.martiniops.com
+              OC_INSECURE: "false"
+              OC_LOG_LEVEL: info
+              # Envoy terminates TLS
+              PROXY_TLS: "false"
+              PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
+              # slownas tops out at NFS 4.1 (xattrs need 4.2), so use decomposed (messagepack metadata files)
+              # instead of the default posix driver, which stores metadata in xattrs
+              STORAGE_USERS_DRIVER: decomposed
+              IDM_CREATE_DEMO_USERS: "false"
+              # Authentik replaces the built-in IdP; the built-in IDM stays as the user store for autoprovisioning
+              OC_EXCLUDE_RUN_SERVICES: idp
+              OC_OIDC_ISSUER: https://auth.martiniops.com/application/o/opencloud/
+              OC_OIDC_CLIENT_ID: &clientId web
+              OC_OIDC_CLIENT_SCOPES: openid profile email
+              PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+              # Authentik issuers are per-provider, so every client shares the one "web" provider
+              WEBFINGER_WEB_OIDC_CLIENT_ID: *clientId
+              WEBFINGER_WEB_OIDC_CLIENT_SCOPES: openid profile email
+              WEBFINGER_DESKTOP_OIDC_CLIENT_ID: *clientId
+              WEBFINGER_DESKTOP_OIDC_CLIENT_SCOPES: &offlineScopes openid profile email offline_access
+              WEBFINGER_ANDROID_OIDC_CLIENT_ID: *clientId
+              WEBFINGER_ANDROID_OIDC_CLIENT_SCOPES: *offlineScopes
+              WEBFINGER_IOS_OIDC_CLIENT_ID: *clientId
+              WEBFINGER_IOS_OIDC_CLIENT_SCOPES: *offlineScopes
+              PROXY_AUTOPROVISION_ACCOUNTS: "true"
+              # Key users on Authentik's stable `sub` so renaming a user in Authentik doesn't orphan their files
+              PROXY_USER_OIDC_CLAIM: sub
+              PROXY_AUTOPROVISION_CLAIM_USERNAME: sub
+              PROXY_USER_CS3_CLAIM: username
+              GRAPH_USERNAME_MATCH: none
+              # Roles come from Authentik groups on every login (opencloudAdmin, opencloudSpaceAdmin,
+              # opencloudUser, opencloudGuest); users in none of them are refused
+              PROXY_ROLE_ASSIGNMENT_DRIVER: oidc
+              PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM: groups
+              GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
+              SETTINGS_SETUP_DEFAULT_ASSIGNMENTS: "false"
+              OC_ADMIN_USER_ID: ""
+              WEB_OPTION_ACCOUNT_EDIT_LINK_HREF: https://auth.martiniops.com/if/user/
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /status.php
+                    port: &port 9200
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext: *securityContext
+            resources:
+              requests:
+                cpu: 100m
+              limits:
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: opencloud
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames:
+          - oc.martiniops.com
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+    persistence:
+      # Config, IDM (LDAP), NATS, search index, thumbnails and system metadata on Ceph, backed up by kopiur
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /etc/opencloud
+            subPath: config
+          - path: /var/lib/opencloud
+            subPath: data
+      csp:
+        type: configMap
+        name: opencloud-configmap
+        advancedMounts:
+          opencloud:
+            app:
+              - path: /etc/opencloud/csp.yaml
+                subPath: csp.yaml
+                readOnly: true
+      # User files (blobs + messagepack metadata) on slownas
+      files:
+        type: nfs
+        server: 10.26.10.20
+        path: /volume1/opencloud
+        advancedMounts:
+          opencloud:
+            app:
+              - path: /var/lib/opencloud/storage/users
+      tmp:
+        type: emptyDir
