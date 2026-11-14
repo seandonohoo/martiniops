@@ -6,7 +6,7 @@ OpenCloud at `https://oc.martiniops.com` (internal gateway), signing in through 
 
 | What                                                                                                   | Where                                                       |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| User files (`/var/lib/opencloud/storage/users`)                                                        | NFS `10.26.10.20:/volume1/opencloud` (slownas)              |
+| User files (`/data`)                                                                                   | NFS `10.26.10.20:/volume1/opencloud` (slownas)              |
 | Config (`/etc/opencloud`), IDM, NATS, search index, thumbnails, system metadata (`/var/lib/opencloud`) | `opencloud` PVC on `ceph-block`, backed up hourly by kopiur |
 
 slownas tops out at NFS 4.1, and extended attributes over NFS need 4.2. OpenCloud's default `posix` storage

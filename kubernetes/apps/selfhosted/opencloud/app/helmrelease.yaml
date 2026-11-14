@@ -55,6 +55,7 @@ spec:
               # slownas tops out at NFS 4.1 (xattrs need 4.2), so use decomposed (messagepack metadata files)
               # instead of the default posix driver, which stores metadata in xattrs
               STORAGE_USERS_DRIVER: decomposed
+              STORAGE_USERS_DECOMPOSED_ROOT: /data
               IDM_CREATE_DEMO_USERS: "false"
               # Authentik replaces the built-in IdP; the built-in IDM stays as the user store for autoprovisioning
               OC_EXCLUDE_RUN_SERVICES: idp
@@ -151,7 +152,8 @@ spec:
               - path: /etc/opencloud/csp.yaml
                 subPath: csp.yaml
                 readOnly: true
-      # User files (blobs + messagepack metadata) on slownas
+      # User files (blobs + messagepack metadata) on slownas. Mounted outside /var/lib/opencloud: nesting it
+      # there makes the runtime create a root-owned storage/ that OpenCloud can't add storage/metadata to.
       files:
         type: nfs
         server: 10.26.10.20
@@ -159,6 +161,6 @@ spec:
         advancedMounts:
           opencloud:
             app:
-              - path: /var/lib/opencloud/storage/users
+              - path: /data
       tmp:
         type: emptyDir
