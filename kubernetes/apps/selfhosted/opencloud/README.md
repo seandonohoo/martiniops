@@ -38,8 +38,11 @@ issuer, so the webfinger client IDs all point at `web`.
     - Strict: `https://oc.martiniops.com/`
     - Strict: `https://oc.martiniops.com/oidc-callback.html`
     - Strict: `https://oc.martiniops.com/oidc-silent-redirect.html`
-    - Regex: `http://127\.0\.0\.1(:[0-9]+)?(/.*)?` (desktop)
-    - Regex: `http://localhost(:[0-9]+)?(/.*)?` (desktop)
+    - Regex: `http://127\.0\.0\.1(:\d+)?(/.*)?` (desktop)
+    - Regex: `http://localhost(:\d+)?(/.*)?` (desktop)
+    - Use `\d`, not `[0-9]`: Authentik (2026.8) runs every redirect URI through `urlparse` to build the
+      discovery endpoint's CORS header, and brackets in the host part raise "Invalid IPv6 URL", so
+      discovery returns 500 to the web client.
     - Strict: `oc://android.opencloud.eu`
     - Strict: `oc://ios.opencloud.eu`
 - **Signing key:** pick a certificate (e.g. the self-signed one). OpenCloud verifies access tokens as
