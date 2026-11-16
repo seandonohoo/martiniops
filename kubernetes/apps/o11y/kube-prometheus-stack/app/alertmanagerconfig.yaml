@@ -14,8 +14,10 @@ spec:
           - name: alertname
             value: InfoInhibitor
             matchType: =
-      # Every alert also goes to Slack; continue so the routes below (Pushover) still get it.
+      # Every alert also goes to Slack; continue so the Pushover route below still gets it.
       # Watchdog is always firing, so it stays out of the channel.
+      # Once a child route matches, the root receiver is no longer used as a fallback, so Pushover needs
+      # its own catch-all route below.
       - receiver: slack
         continue: true
         matchers:
@@ -32,9 +34,9 @@ spec:
       #       matchType: =
       - receiver: pushover
         matchers:
-          - name: severity
-            value: critical
-            matchType: =
+          - name: alertname
+            value: .+
+            matchType: =~
     groupBy:
       - alertname
       - cluster
