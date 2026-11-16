@@ -10,10 +10,10 @@ OpenCloud at `https://oc.martiniops.com` (internal gateway), signing in through 
 | Config (`/etc/opencloud`), IDM, NATS, search index, thumbnails, system metadata (`/var/lib/opencloud`) | `opencloud` PVC on `ceph-block`, backed up hourly by kopiur |
 
 This uses OpenCloud's default `posix` storage driver, which keeps files under their real names
-(`users/<username>/…`, `projects/<space id>/…`) and stores its metadata in extended attributes on them.
-NFS only carries xattrs from 4.2, so `/data` is a static PV (`persistentvolume.yaml`) that pins
-`nfsvers=4.2`; an inline `nfs` volume can't set mount options. Usernames are Authentik's hashed `sub`
-(see below), so personal folders are named by that hash.
+(`users/<user id>/…`, `projects/<space id>/…`) and stores its metadata in extended attributes (`user.oc.*`)
+on them. NFS only carries xattrs from 4.2, so `/data` is a static PV (`persistentvolume.yaml`) that pins
+`nfsvers=4.2`; an inline `nfs` volume can't set mount options. Personal folders are named by OpenCloud's
+internal user UUID.
 
 The user files aren't covered by kopiur (NFS volumes have no CSI snapshots). The `opencloud-backup` CronJob
 backs them up with restic every night at 09:30 UTC to `slownas:/volume1/fastnas-backup/restic/opencloud`,
@@ -27,31 +27,48 @@ and the NAS holds the files. Restore both to roughly the same time.
 
 ### Restore the user files
 
-To check a backup without touching anything, restore into the job's scratch space, and list the xattrs
-restic stored for the personal spaces (names only; the values are base64):
+These reuse the backup CronJob's pod (same mounts, password and uid) with a different script, passed in
+through `SCRIPT` to keep the quoting sane.
+
+**Check a backup** without touching anything. This restores into the job's scratch space, then lists the
+`user.oc.*` xattrs restic stored on the personal spaces (they should include `user.oc.id` and
+`user.oc.space.id`):
 
 ```sh
+SCRIPT='set -e
+restic snapshots
+restic restore latest --target /tmp/restore
+find /tmp/restore -type f | head
+id=$(restic snapshots --latest 1 --json | grep -o "\"short_id\":\"[^\"]*" | cut -d\" -f4)
+restic cat tree "$id:/data/users" | grep -o "\"name\":\"user\.oc\.[^\"]*\"" | sort | uniq -c'
 kubectl create job -n selfhosted opencloud-restore-test --from=cronjob/opencloud-backup --dry-run=client -o yaml \
-  | yq '.spec.template.spec.containers[0].command = ["/bin/sh", "-c", "set -e; restic snapshots; restic restore latest --target /tmp/restore; find /tmp/restore -type f | head; restic cat tree latest:/data/users | grep -o \"\\\"name\\\":\\\"user[^\\\"]*\\\"\" | sort | uniq -c"]' \
+  | SCRIPT="$SCRIPT" yq '.spec.template.spec.containers[0].command = ["/bin/sh", "-c", strenv(SCRIPT)]' \
   | kubectl apply -f -
 kubectl logs -n selfhosted job/opencloud-restore-test -f
 kubectl delete job -n selfhosted opencloud-restore-test
 ```
 
-For a real restore (this overwrites `/data` on fastnas):
+**Restore for real.** This writes over `/data` on fastnas. Files added since the snapshot are left in place;
+for an exact copy, empty the share on fastnas first. Only the `user.*` xattrs are restored: the backup also
+holds `system.nfs4_acl` and `security.selinux` from the NFS mount, which uid 1000 can't set.
 
 ```sh
 flux suspend hr opencloud -n selfhosted
 kubectl scale deploy opencloud -n selfhosted --replicas=0
+SCRIPT='set -e
+restic snapshots
+restic restore latest --target / --include /data --include-xattr "user.*"'
 kubectl create job -n selfhosted opencloud-restore --from=cronjob/opencloud-backup --dry-run=client -o yaml \
-  | yq '.spec.template.spec.containers[0].command = ["/bin/sh", "-c", "restic snapshots && restic restore latest --target / --include /data"]
+  | SCRIPT="$SCRIPT" yq '.spec.template.spec.containers[0].command = ["/bin/sh", "-c", strenv(SCRIPT)]
       | (.spec.template.spec.containers[0].volumeMounts[] | select(.mountPath == "/data")).readOnly = false' \
   | kubectl apply -f -
 kubectl logs -n selfhosted job/opencloud-restore -f
+kubectl delete job -n selfhosted opencloud-restore
 ```
 
-Use a snapshot ID instead of `latest` to go further back. Then restore the `opencloud` PVC from kopiur to a
-matching time, and resume the HelmRelease.
+Use a snapshot ID instead of `latest` to go further back (`restic snapshots` lists them). Then restore the
+`opencloud` PVC from kopiur to a matching time (see `kopiur-system/fastnas-mirror/README.md`), and run
+`flux resume hr opencloud -n selfhosted`.
 
 ### fastnas setup (before first deploy)
 
