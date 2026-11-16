@@ -13,6 +13,7 @@ spec:
     networkpolicies:
       opencloud:
         type: cilium
+        controller: opencloud
         ingress:
           - fromEndpoints:
               - matchLabels:
@@ -113,6 +114,47 @@ spec:
                 cpu: 100m
               limits:
                 memory: 2Gi
+      # Nightly restic backup of the user files to slownas. restic keeps the xattrs the posix driver stores
+      # its metadata in, which a plain copy over slownas's NFS 4.1 would drop.
+      backup:
+        type: cronjob
+        cronjob:
+          schedule: 30 9 * * *
+          backoffLimit: 0
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+          ttlSecondsAfterFinished: 86400
+        containers:
+          app:
+            image:
+              repository: docker.io/restic/restic
+              tag: 0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+            env:
+              RESTIC_REPOSITORY: /backup/restic/opencloud
+              RESTIC_CACHE_DIR: /tmp/restic-cache
+              RESTIC_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: kopiur-repository-secret
+                    key: KOPIA_PASSWORD
+            # Fixed --host: the pod's hostname changes every run, and forget groups snapshots by host
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                restic cat config >/dev/null 2>&1 || restic init
+                restic backup /data --host opencloud
+                restic forget --host opencloud --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
+            securityContext: *securityContext
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 1Gi
+        pod:
+          restartPolicy: Never
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -137,11 +179,15 @@ spec:
       # Config, IDM (LDAP), NATS, search index, thumbnails and system metadata on Ceph, backed up by kopiur
       config:
         existingClaim: "{{ .Release.Name }}"
-        globalMounts:
-          - path: /etc/opencloud
-            subPath: config
-          - path: /var/lib/opencloud
-            subPath: data
+        # Only the opencloud pod: the PVC is RWO, so the backup job can't share it
+        advancedMounts:
+          opencloud:
+            init-config: &configMounts
+              - path: /etc/opencloud
+                subPath: config
+              - path: /var/lib/opencloud
+                subPath: data
+            app: *configMounts
       csp:
         type: configMap
         name: opencloud-configmap
@@ -159,5 +205,17 @@ spec:
           opencloud:
             app:
               - path: /data
+          backup:
+            app:
+              - path: /data
+                readOnly: true
+      fastnas-backup:
+        type: nfs
+        server: 10.26.10.20
+        path: /volume1/fastnas-backup
+        advancedMounts:
+          backup:
+            app:
+              - path: /backup
       tmp:
         type: emptyDir

@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: fastnas-mirror
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: fastnas-mirror
+  interval: 1h
+  values:
+    controllers:
+      fastnas-mirror:
+        type: cronjob
+        cronjob:
+          # After the 08:00 UTC CNPG base backups
+          schedule: 0 9 * * *
+          backoffLimit: 0
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+          ttlSecondsAfterFinished: 86400
+        containers:
+          app:
+            image:
+              repository: docker.io/rclone/rclone
+              tag: 1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+            env:
+              HOME: /tmp
+              RCLONE_CONFIG_FASTNAS_TYPE: s3
+              RCLONE_CONFIG_FASTNAS_PROVIDER: SeaweedFS
+              RCLONE_CONFIG_FASTNAS_ENDPOINT: http://fastnas.martinirossi.net:8333
+              RCLONE_CONFIG_FASTNAS_ACCESS_KEY_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: kopiur-repository-secret
+                    key: AWS_ACCESS_KEY_ID
+              RCLONE_CONFIG_FASTNAS_SECRET_ACCESS_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: kopiur-repository-secret
+                    key: AWS_SECRET_ACCESS_KEY
+            # Mirrors the kopiur and CNPG buckets; both tools prune their own buckets, and Btrfs snapshots of
+            # the share on slownas keep history in case a deletion here gets mirrored
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                for bucket in backups cnpg; do
+                  rclone sync "fastnas:$bucket" "/backup/s3/$bucket" --fast-list --transfers 8 --stats-one-line --stats 1m
+                done
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 512Mi
+        pod:
+          restartPolicy: Never
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    persistence:
+      backup:
+        type: nfs
+        server: 10.26.10.20
+        path: /volume1/fastnas-backup
+        globalMounts:
+          - path: /backup
+      tmp:
+        type: emptyDir
