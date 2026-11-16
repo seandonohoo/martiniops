@@ -6,6 +6,7 @@ resources:
   - ./alertmanagerconfig.yaml
   - ./externalsecret.yaml
   - ./grafanadashboard.yaml
+  - ./grafanadashboard-ups.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./scrapeconfig.yaml
@@ -13,6 +14,9 @@ configMapGenerator:
   - name: flux-metrics-configmap
     files:
       - flux-metrics.yaml=./resources/flux-metrics.yaml
+  - name: ups-dashboard
+    files:
+      - ups.json=./resources/ups.json
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

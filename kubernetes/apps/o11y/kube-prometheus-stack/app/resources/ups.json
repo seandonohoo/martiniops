@@ -1,0 +1,1936 @@
+{
+  "title": "UPS",
+  "uid": "ups",
+  "description": "UPSs monitored through NUT in Home Assistant, scraped from Home Assistant's Prometheus endpoint. Layout follows grafana.com dashboard 25293 (UPS Monitor, RFC 1628 UPS-MIB).",
+  "tags": ["home-assistant", "ups", "nut"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "graphTooltip": 1,
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 2
+      },
+      {
+        "name": "location",
+        "label": "Location",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "query": {
+          "query": "label_values(bwood_entity_info{entity=~\"sensor\\\\..*ups_battery_charge\"}, area)",
+          "refId": "location"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "sort": 1
+      },
+      {
+        "name": "ups",
+        "label": "UPS",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "query": {
+          "query": "query_result(label_replace(bwood_sensor_battery_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_charge\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "refId": "ups"
+        },
+        "regex": "/ups=\"([^\"]+)\"/",
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "UPS Identity - $ups",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Location",
+      "description": "Home Assistant area the UPS is assigned to.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_battery_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_charge\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "{{area}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Rated Power",
+      "description": "Nominal real power (W) the UPS reports; load power is load % of this.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "watt",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Nominal Battery Voltage",
+      "description": "Rated battery pack voltage.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "volt",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "NUT Data",
+      "description": "Whether Home Assistant is receiving this UPS's sensors from NUT. Unavailable means HA lost the NUT server or the UPS, so every other panel is stale. The UPS's own status (online / on battery) is a text sensor, which Home Assistant's Prometheus export doesn't include.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 3
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "min by (ups, area) (label_replace(bwood_entity_available{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_.*\", entity!~\".*_alarms|.*_transfer_reason\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Reporting",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "Unavailable",
+                  "color": "red"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Battery",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "type": "gauge",
+      "title": "Battery Charge",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_battery_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_charge\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 25
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 75
+              }
+            ]
+          },
+          "noValue": "Not reported"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Estimated Runtime",
+      "description": "Runtime at the current load, as estimated by the UPS.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 5,
+        "w": 6,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_duration_s{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_runtime\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 300
+              },
+              {
+                "color": "yellow",
+                "value": 900
+              },
+              {
+                "color": "green",
+                "value": 1800
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Battery Voltage",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 6,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Voltage (V)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "volt",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 10,
+      "type": "gauge",
+      "title": "Battery vs Nominal",
+      "description": "Battery voltage as a % of nominal. A healthy lead-acid pack floats around 110-115% on mains, and falls toward ~87% as it runs flat.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 5,
+        "w": 6,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\")) / max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\")) * 100",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 80,
+          "max": 120,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 92
+              },
+              {
+                "color": "green",
+                "value": 100
+              }
+            ]
+          },
+          "noValue": "Not reported"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Input / Output",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "gauge",
+      "title": "Output Load",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 4,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Load",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "noValue": "Not reported"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "horizontal",
+        "textMode": "value_and_name"
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Load Power",
+      "description": "Load % x rated power.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 12,
+        "w": 4,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\")) / 100 * max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Load",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "watt",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Input Voltage",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 12,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_input_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Input",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "volt",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Output Voltage",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 12,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_output_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Output",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "Not reported",
+          "unit": "volt",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 16,
+      "type": "row",
+      "title": "Trends",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "panels": []
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Output Load",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Load %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Estimated Runtime",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_duration_s{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_runtime\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Runtime",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 300
+              },
+              {
+                "color": "yellow",
+                "value": 900
+              },
+              {
+                "color": "green",
+                "value": 1800
+              }
+            ]
+          },
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Input & Output Voltage",
+      "description": "Dashed grey is nominal input voltage (120 V if the UPS doesn't report it), red dashes are +/-10%, and orange is the UPS's high-voltage transfer point, where it switches to battery.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_input_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Input V",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_output_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Output V",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max(max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_input_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))) or vector(120)",
+          "legendFormat": "Nominal",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "(max(max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_input_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))) or vector(120)) * 1.1",
+          "legendFormat": "High (+10%)",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "(max(max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_input_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))) or vector(120)) * 0.9",
+          "legendFormat": "Low (-10%)",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_high_voltage_transfer\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Transfer high",
+          "refId": "F"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Nominal/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#80808060"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [10, 10]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/High \\(|Low \\(/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [5, 5]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Transfer/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [2, 4]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Battery Charge",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_battery_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_charge\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Charge %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Battery Voltage",
+      "description": "Dashed grey is the nominal pack voltage.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Voltage (V)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_battery_voltage\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Nominal",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Nominal/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#80808060"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [10, 10]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Load Power",
+      "description": "Load % x rated power. Dashed grey is the rated power.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\")) / 100 * max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Load (W)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\"$ups .+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "Rated",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Rated/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#80808060"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [10, 10]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "type": "row",
+      "title": "All UPSs",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "panels": []
+    },
+    {
+      "id": 24,
+      "type": "table",
+      "title": "All UPSs",
+      "description": "Every UPS in the selected locations, ignoring the UPS picker. Blank cells are sensors that UPS doesn't report (or that are disabled in Home Assistant).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_battery_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_charge\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_duration_s{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_runtime\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "B",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "C",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_unit_percent{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_load\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\")) / 100 * max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "D",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_power_w{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_nominal_real_power\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "E",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_input_voltage\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "F",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_output_voltage\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "G",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "max by (ups, area) (label_replace(bwood_sensor_voltage_v{job=\"home-assistant\", entity=~\"sensor\\\\..*ups_battery_voltage\", friendly_name=~\".+\"} * on (entity) group_left (area) bwood_entity_info{area=~\"$location\"}, \"ups\", \"$1\", \"friendly_name\", \"(?i)(.*?ups) .*\"))",
+          "legendFormat": "",
+          "refId": "H",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "ups": 0,
+              "area": 1,
+              "Value #A": 2,
+              "Value #B": 3,
+              "Value #C": 4,
+              "Value #D": 5,
+              "Value #E": 6,
+              "Value #F": 7,
+              "Value #G": 8,
+              "Value #H": 9
+            },
+            "renameByName": {
+              "ups": "UPS",
+              "area": "Location",
+              "Value #A": "Charge",
+              "Value #B": "Runtime",
+              "Value #C": "Load",
+              "Value #D": "Load W",
+              "Value #E": "Rated W",
+              "Value #F": "Input V",
+              "Value #G": "Output V",
+              "Value #H": "Battery V"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "custom": {
+            "align": "auto"
+          },
+          "noValue": ""
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Charge"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 25
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "green",
+                      "value": 75
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Runtime"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 300
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 900
+                    },
+                    {
+                      "color": "green",
+                      "value": 1800
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Load"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 75
+                    },
+                    {
+                      "color": "red",
+                      "value": 90
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Load W"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watt"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rated W"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watt"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Input V"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "volt"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Output V"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "volt"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Battery V"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "volt"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "UPS",
+            "desc": false
+          }
+        ]
+      }
+    }
+  ]
+}

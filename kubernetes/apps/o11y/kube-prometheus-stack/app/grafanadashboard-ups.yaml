@@ -1,0 +1,19 @@
+---
+# UPSs monitored through NUT in Home Assistant (see scrapeconfig.yaml). Vendored in resources/ups.json;
+# layout follows grafana.com dashboard 25293, adapted to Home Assistant's bwood_* metrics.
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/grafana.integreatly.org/grafanadashboard_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: ups
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
+  configMapRef:
+    name: ups-dashboard
+    key: ups.json
