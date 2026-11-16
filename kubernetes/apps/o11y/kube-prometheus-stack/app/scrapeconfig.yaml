@@ -65,3 +65,24 @@
 #     - action: replace
 #       targetLabel: job
 #       replacement: jetkvm
+---
+# Home Assistant's prometheus integration; /api/prometheus requires a long-lived access token.
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: home-assistant
+spec:
+  staticConfigs:
+    - targets:
+        - 10.26.10.50:8123
+  metricsPath: /api/prometheus
+  authorization:
+    type: Bearer
+    credentials:
+      name: home-assistant-prometheus-secret
+      key: HASS_PROMETHEUS_TOKEN
+  relabelings:
+    - action: replace
+      targetLabel: job
+      replacement: home-assistant
