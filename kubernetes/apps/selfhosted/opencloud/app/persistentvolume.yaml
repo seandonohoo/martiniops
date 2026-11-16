@@ -1,0 +1,37 @@
+---
+# Static PV so the mount can force NFS 4.2 (needed for xattrs); inline nfs volumes can't set mount options
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: opencloud-files
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: opencloud-files
+    namespace: selfhosted
+  mountOptions:
+    - nfsvers=4.2
+    - nconnect=4
+    - hard
+    - noatime
+  nfs:
+    server: 10.26.10.15
+    path: /opencloud
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opencloud-files
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: ""
+  volumeName: opencloud-files

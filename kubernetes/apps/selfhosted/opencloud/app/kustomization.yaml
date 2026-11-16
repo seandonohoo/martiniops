@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
+  - ./persistentvolume.yaml
 configMapGenerator:
   - name: opencloud-configmap
     files:

@@ -52,10 +52,9 @@ spec:
               # Envoy terminates TLS
               PROXY_TLS: "false"
               PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
-              # slownas tops out at NFS 4.1 (xattrs need 4.2), so use decomposed (messagepack metadata files)
-              # instead of the default posix driver, which stores metadata in xattrs
-              STORAGE_USERS_DRIVER: decomposed
-              STORAGE_USERS_DECOMPOSED_ROOT: /data
+              # posix keeps file metadata in xattrs, so /data has to be mounted over NFS 4.2 (see persistentvolume.yaml)
+              STORAGE_USERS_DRIVER: posix
+              STORAGE_USERS_POSIX_ROOT: /data
               IDM_CREATE_DEMO_USERS: "false"
               # Authentik replaces the built-in IdP; the built-in IDM stays as the user store for autoprovisioning
               OC_EXCLUDE_RUN_SERVICES: idp
@@ -152,12 +151,10 @@ spec:
               - path: /etc/opencloud/csp.yaml
                 subPath: csp.yaml
                 readOnly: true
-      # User files (blobs + messagepack metadata) on slownas. Mounted outside /var/lib/opencloud: nesting it
-      # there makes the runtime create a root-owned storage/ that OpenCloud can't add storage/metadata to.
+      # User files on fastnas. Mounted outside /var/lib/opencloud: nesting it there makes the runtime
+      # create a root-owned storage/ that OpenCloud can't add storage/metadata to.
       files:
-        type: nfs
-        server: 10.26.10.20
-        path: /volume1/opencloud
+        existingClaim: opencloud-files
         advancedMounts:
           opencloud:
             app:

@@ -6,25 +6,42 @@ OpenCloud at `https://oc.martiniops.com` (internal gateway), signing in through 
 
 | What                                                                                                   | Where                                                       |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| User files (`/data`)                                                                                   | NFS `10.26.10.20:/volume1/opencloud` (slownas)              |
+| User files (`/data`)                                                                                   | NFS 4.2 `10.26.10.15:/opencloud` (fastnas, RAID10 NVMe)     |
 | Config (`/etc/opencloud`), IDM, NATS, search index, thumbnails, system metadata (`/var/lib/opencloud`) | `opencloud` PVC on `ceph-block`, backed up hourly by kopiur |
 
-slownas tops out at NFS 4.1, and extended attributes over NFS need 4.2. OpenCloud's default `posix` storage
-driver keeps its metadata in xattrs, so this uses the `decomposed` driver, which keeps metadata in
-messagepack files next to the blobs. Files on the share are stored by ID, not by name, so they're not
-browsable from the NAS. There's no migration path from `decomposed` to `posix` later; switching means
-copying the data into a new installation.
+This uses OpenCloud's default `posix` storage driver, which keeps files under their real names
+(`users/<username>/…`, `projects/<space id>/…`) and stores its metadata in extended attributes on them.
+NFS only carries xattrs from 4.2, so `/data` is a static PV (`persistentvolume.yaml`) that pins
+`nfsvers=4.2`; an inline `nfs` volume can't set mount options. Usernames are Authentik's hashed `sub`
+(see below), so personal folders are named by that hash.
 
-The user files aren't covered by kopiur. Back up `/volume1/opencloud` on the NAS (Hyper Backup or
-snapshots). Restoring one without the other leaves them out of step: the PVC holds the space metadata
-and the NAS holds the blobs.
+The user files aren't covered by kopiur. Back them up on the NAS, and keep the xattrs when you do
+(`rsync -aX`, or a snapshot): without them OpenCloud loses track of the files. Restoring one side without
+the other leaves them out of step: the PVC holds the space and share metadata, and the NAS holds the files.
 
-### slownas setup (before first deploy)
+### fastnas setup (before first deploy)
 
-1. In DSM, create the shared folder `opencloud` on volume 1.
-2. Add an NFS rule for it: host `10.26.10.0/24`, read/write, squash **No mapping**, security `sys`.
-3. Make the folder owned by uid/gid `1000` (the user OpenCloud runs as). Over SSH on the NAS:
-   `sudo chown 1000:1000 /volume1/opencloud && sudo chmod 750 /volume1/opencloud`.
+1. In OMV, **Storage → Shared Folders → Create**: name `opencloud`, on the RAID10 file system.
+2. Over SSH on fastnas, make it owned by uid/gid `1000` (the user OpenCloud runs as). The pod's `fsGroup`
+   isn't applied to NFS volumes. The Shared Folders list shows the absolute path:
+
+    ```sh
+    sudo chown 1000:1000 /srv/dev-disk-by-uuid-<…>/opencloud
+    sudo chmod 750 /srv/dev-disk-by-uuid-<…>/opencloud
+    ```
+
+3. **Services → NFS → Settings**: enabled, with version 4.2 among the allowed versions.
+4. **Services → NFS → Shares → Create**: shared folder `opencloud`, client `10.26.10.0/24`, permission
+   read/write, extra options `no_subtree_check,insecure`. Save and apply.
+5. Check it took effect:
+
+    ```sh
+    cat /proc/fs/nfsd/versions   # includes +4.2
+    sudo exportfs -v             # /export/opencloud for 10.26.10.0/24, rw
+    ```
+
+    OMV exports `/export` as the NFSv4 root (`fsid=0`), so clients mount `/opencloud`, not
+    `/export/opencloud`.
 
 ## Authentik setup (before first deploy)
 
