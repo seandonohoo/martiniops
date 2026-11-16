@@ -1,0 +1,65 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnative-pg-rules
+spec:
+  groups:
+    - name: cloudnative-pg-backup.rules
+      rules:
+        # Backups go through the barman-cloud plugin, which reports under barman_cloud_*; the built-in
+        # cnpg_collector_*backup* metrics stay at 0 with plugin backups
+        - alert: CNPGBackupStale
+          expr: |-
+            time() - max by (namespace, cluster) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 26 * 3600
+          for: 30m
+          annotations:
+            summary: >-
+              CNPG cluster {{ $labels.namespace }}/{{ $labels.cluster }} has no base backup newer than
+              {{ $value | humanizeDuration }}
+          labels:
+            severity: warning
+
+        - alert: CNPGBackupFailed
+          expr: |-
+            max by (namespace, cluster) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp)
+              > max by (namespace, cluster) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
+          annotations:
+            summary: >-
+              The latest base backup of CNPG cluster {{ $labels.namespace }}/{{ $labels.cluster }} failed
+          labels:
+            severity: warning
+
+        # Primary only: replicas don't archive
+        - alert: CNPGWALArchivingFailing
+          expr: |-
+            (cnpg_pg_stat_archiver_last_failed_time > cnpg_pg_stat_archiver_last_archived_time)
+              and on (namespace, pod) cnpg_pg_replication_in_recovery == 0
+          for: 15m
+          annotations:
+            summary: >-
+              WAL archiving is failing on {{ $labels.namespace }}/{{ $labels.pod }}; point-in-time recovery stops
+              at the last archived segment, and WAL builds up on the volume
+          labels:
+            severity: critical
+
+        - alert: CNPGWALArchiveBacklog
+          expr: |-
+            cnpg_collector_pg_wal_archive_status{value="ready"} > 10
+          for: 30m
+          annotations:
+            summary: >-
+              {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} WAL segments waiting to be archived
+          labels:
+            severity: warning
+
+        - alert: CNPGBackupMetricsMissing
+          expr: |-
+            absent(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
+          for: 1h
+          annotations:
+            summary: >-
+              No CNPG backup metrics are being scraped, so the other CNPG backup alerts can't fire
+          labels:
+            severity: warning

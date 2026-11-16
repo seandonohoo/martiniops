@@ -8,8 +8,15 @@ The `authentik` CloudNativePG cluster backs up to `s3://cnpg/authentik-2/` on fa
 - A base backup runs daily at 08:00 UTC (`ScheduledBackup/authentik`)
 - Retention is 14 days
 
-`database/cloudnative-pg/app/prometheusrule.yaml` alerts on failed or stale (>26h) backups and on WAL
-archiving failures, and the CloudNativePG Grafana dashboard shows the recovery window per cluster.
+`database/cloudnative-pg/app/prometheusrule.yaml` alerts on a failed or stale (>26h) base backup, on WAL
+archiving failures or a backlog of unarchived WAL, and on the backup metrics going missing. Every CNPG
+instance is scraped by the `cloudnative-pg-instances` PodMonitor next to it.
+
+With the barman-cloud plugin, backup state is reported as `barman_cloud_cloudnative_pg_io_*` (last
+available and last failed backup, first recoverability point). The built-in `cnpg_collector_*backup*` and
+`cnpg_collector_first_recoverability_point` metrics stay at 0, so the CloudNativePG Grafana dashboard's
+backup panels, which read those, show nothing useful. Use the `ObjectStore` status (below) for the
+recovery window.
 
 Check backup health:
 
