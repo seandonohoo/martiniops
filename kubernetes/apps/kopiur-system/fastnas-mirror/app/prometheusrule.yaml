@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fastnas-backup-rules
+spec:
+  groups:
+    - name: fastnas-backup.rules
+      rules:
+        # KubeJobFailed covers a run that fails; these cover runs that stop happening (suspended, deleted, stuck)
+        - alert: FastnasBackupStale
+          expr: |-
+            time() - kube_cronjob_status_last_successful_time{cronjob=~"fastnas-mirror|opencloud-backup"} > 26 * 3600
+          for: 15m
+          annotations:
+            summary: >-
+              CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} last succeeded {{ $value | humanizeDuration }} ago
+          labels:
+            severity: warning
+
+        - alert: FastnasBackupMissing
+          expr: |-
+            absent(kube_cronjob_status_last_successful_time{namespace="kopiur-system", cronjob="fastnas-mirror"})
+            or absent(kube_cronjob_status_last_successful_time{namespace="selfhosted", cronjob="opencloud-backup"})
+          for: 1h
+          annotations:
+            summary: >-
+              CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is missing or has never succeeded
+          labels:
+            severity: warning

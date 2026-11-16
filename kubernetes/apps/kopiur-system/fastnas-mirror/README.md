@@ -17,6 +17,12 @@ comes from Btrfs snapshots of the `fastnas-backup` share on slownas (Snapshot Re
 All three use the `kopiur` 1Password item: the S3 keys, and `KOPIA_PASSWORD` for both the kopia and the
 restic repositories.
 
+## Alerts
+
+A failed run fires `KubeJobFailed` (kube-prometheus). `prometheusrule.yaml` covers runs that stop happening
+for both CronJobs: `FastnasBackupStale` when one hasn't succeeded in 26h, and `FastnasBackupMissing` when
+one has been deleted or never succeeded.
+
 ## Run it now
 
 ```sh
